@@ -1,0 +1,87 @@
+name: RSE task CI
+
+on:
+  push:
+    branches:
+      - "**"
+  pull_request:
+    branches:
+      - "main"
+
+jobs:
+  flake8:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        paths: [" "]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install flake8
+        uses: py-actions/flake8@v2
+        with:
+          max-line-length: "79"
+          paths: ${{ matrix.paths }}
+  fenics:
+    runs-on: ubuntu-latest
+    container: dolfinx/dolfinx:v0.7.3
+    strategy:
+      fail-fast: false
+      matrix:
+        procs: ["1", "2"]
+        demos: ["fenicsx_python"]
+    steps:
+       - name: Checkout code
+         uses: actions/checkout@v4
+       - name: Test dolfinx (python)
+         run: |
+           cd fenicsx
+           mpirun -np ${{ matrix.procs }} python3 ${{ matrix.demos }}.py
+           cd ..
+       - name: Test dolfinx (cpp)
+         run: |
+           export DOLFINX_DIR=/usr/local/dolfinx-real
+           cd fenicsx
+           mkdir build_folder
+           cd build_folder
+           ffcx ../poisson.py
+           cmake ..
+           make
+           mpirun -np ${{ matrix.procs }} ./demo_poisson
+  pytorch:
+    runs-on: ubuntu-latest
+    container: pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
+    strategy:
+      fail-fast: false
+      matrix:
+        demoSerial: ["introduction_sciml_pytorch"]
+        demoParallel: ["introduction_sciml_pytorch_distributed"]
+    steps:
+       - name: Checkout code
+         uses: actions/checkout@v4
+       - name: Install MPI
+         run: |
+           apt update
+           apt-get install -y libmpich-dev
+           export CC=$(which mpicc)
+           pip3 install mpi4py
+       - name: Run serial tests
+         run: |
+          cd pytorch/sciml_modules
+          python3 test_unit.py
+          cd ../..
+       - name: Run parallel tests
+         run: |
+          cd pytorch/sciml_modules
+          mpirun -np 2 python3 test_unit_parallel.py
+          cd ../..
+       - name: Test PyTorch (serial)
+         run: |
+           cd pytorch
+           python3 ${{ matrix.demoSerial }}.py
+           cd ..
+       - name: Test PyTorch (distributed)
+         run: |
+           cd pytorch
+           mpirun -np 8 python3 ${{ matrix.demoParallel }}.py

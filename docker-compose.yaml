@@ -1,0 +1,14 @@
+services:
+  fenics_se_task:
+    build: 
+      context: fenics_docker
+      dockerfile: Dockerfile
+      tags:
+        - "no-tag"
+
+  pytorch_se_task:
+    build: 
+      context: pytorch_docker
+      dockerfile: Dockerfile
+      tags:
+        - "no-tag"
