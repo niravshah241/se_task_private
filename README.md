@@ -53,6 +53,19 @@ where, $W_k$ and $b_k$ are the known weights and biases. This relationship can b
 
 The package ```sciml_modules``` is divided into modules: Dataset, Neural net, Train-Validate (for serial training), additionally, Partitioned dataset and Train-Validate-Distributed (for data-parallel distributed training for small datasets) and Wrappers (some additional helper functions). The unit tests are given in ```test_unit.py``` (serial) and ```test_unit_parallel.py``` (distributed) in the folder ```pytorch/sciml_modules```.
 
+To run the serial demo:
+```
+cd pytorch
+python3 introduction_sciml_pytorch.py
+```
+
+To run the distributed demo:
+
+```
+cd pytorch
+mpirun -np 8 python3 introduction_sciml_pytorch_distributed.py
+```
+
 ### Dependencies
 
 - [DOLFINx](https://fenicsproject.org/)
