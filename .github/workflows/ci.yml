@@ -23,6 +23,22 @@ jobs:
         with:
           max-line-length: "79"
           paths: ${{ matrix.paths }}
+  clang_format:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        paths: 
+          - "fenicsx"
+          - "dot_product"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Run clang-format style
+        uses: jidicula/clang-format-action@v4.14.0
+        with:
+          clang-format-version: '13'
+          check-path: ${{ matrix.paths }}
   fenics:
     runs-on: ubuntu-latest
     container: dolfinx/dolfinx:v0.7.3
@@ -76,6 +92,24 @@ jobs:
           cd pytorch/sciml_modules
           mpirun -np 2 python3 test_unit_parallel.py
           cd ../..
+       - name: Install Coverage
+         run: |
+           pip3 install coverage
+       - name: Run test coverage (parallel)
+         run: |
+           cd pytorch/sciml_modules
+           mpirun -np 2 python3 -m coverage run -m --parallel-mode unittest test_unit_parallel.py
+           coverage combine
+           coverage report -m
+           coverage erase
+           cd ../..
+       - name: Run test coverage (serial)
+         run: |
+           cd pytorch/sciml_modules
+           python3 -m coverage run -m unittest test_unit.py && coverage report
+           coverage report -m
+           coverage erase
+           cd ../..
        - name: Test PyTorch (serial)
          run: |
            cd pytorch
@@ -85,3 +119,40 @@ jobs:
          run: |
            cd pytorch
            mpirun -np 8 python3 ${{ matrix.demoParallel }}.py
+  dot_product:
+    runs-on: ubuntu-latest
+    # dolfinx container for MPI support
+    # CI warnings can be suppressed by using #ifndef __clang_analyzer__
+    container: dolfinx/dolfinx:v0.7.3
+    strategy:
+      fail-fast: false
+    steps:
+       - name: Checkout code
+         uses: actions/checkout@v4
+       - name: Install clang-tidy
+         run: |
+           pip3 install clang-tidy
+       - name: Unit tests and code coverage
+         run: |
+           cd dot_product
+           mkdir build
+           cd build
+           cmake ..
+           make
+           ctest -T Test -T Coverage
+           cd ../..
+       - name: Test Dot Product (serial)
+         run: |
+           cd dot_product
+           ./dot_product 
+           ./gen_num_test
+           ./dot_product_test
+           cd ..
+       - name: Test Dot Product (parallel)
+         run: |
+           cd dot_product
+           mpirun -n 2 ./dot_product_test
+           mpirun -n 2 ./gen_num_test
+           mpirun -n 2 ./dot_product
+           cd ..
+    
