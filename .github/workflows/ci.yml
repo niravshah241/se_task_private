@@ -151,8 +151,8 @@ jobs:
        - name: Test Dot Product (parallel)
          run: |
            cd dot_product
-           mpirun -n 2 ./dot_product_test
-           mpirun -n 2 ./gen_num_test
-           mpirun -n 2 ./dot_product
+           mpirun -np 2 ./dot_product_test
+           mpirun -np 2 ./gen_num_test
+           mpirun -np 2 ./dot_product
            cd ..
     
