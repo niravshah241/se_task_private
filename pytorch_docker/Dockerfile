@@ -12,7 +12,7 @@ WORKDIR /home/se_task
 
 # Clone git repository
 RUN apt-get install -y git
-RUN git clone https://github.com/niravshah249/se_task_private.git
+RUN git clone https://github.com/niravshah241/se_task_private.git
 
 # Keep container alive
 CMD ["sleep", "infinity"]
