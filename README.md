@@ -87,13 +87,18 @@ $$ v_n = [100n + 1 \ ... \ 100(n+1)] \ .$$
 
 In this demo, we consider dot product of a vector with itself. Each process computes the local dot product and communicates its local dot product result with all other processes to compute the dot product over the global vector. The vector consist of sequential integers starting from a given integer value. The unit tests are specified in ```test_dot_product.cpp``` and ```test_gen_num.cpp```. The code is tested using ```ctest``` with code coverage.
 
-To run the demo:
+To build the demo:
 ```
 cd dot_product
 mkdir build && cd build
 cmake ..
 make
 ctest -T Test -T Coverage
+cd ..
+```
+
+To run the demo:
+```
 ./dot_product
 mpirun -np num_procs ./dot_product
 ```
