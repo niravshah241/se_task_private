@@ -1,4 +1,4 @@
-## Finite element calculations using FEniCSx and Introduction to scientific machine learning using PyTorch
+## Finite element calculations using FEniCSx, Introduction to scientific machine learning using PyTorch and Dot product computations
 
 ### Finite element calculations using FEniCSx
 
@@ -47,7 +47,7 @@ Also, see the section Dependencies below.
 
 This part focuses on developing a python package ```sciml_modules```. We consider a problem of approximating the function between input ($x$) and output ($y$) of the form:
 
-$$y = sin(W_k x + b_k)$$  
+$$ y = sin(W_k x + b_k) $$  
 
 where, $W_k$ and $b_k$ are the known weights and biases. This relationship can be represented using an input-output artificial neural network (no hidden layers). We randomly generate $x, W_k, b_k$ and calculate the output $y$. After generating, the input-output data $x, y$, we train a neural network to apprxoimate the known weights - biases and compare the absolute errors.
 
@@ -66,13 +66,49 @@ cd pytorch
 mpirun -np 8 python3 introduction_sciml_pytorch_distributed.py
 ```
 
+**Update [February 17, 2025]** Code coverage using ```coverage``` added.
+
+### Dot product computations
+**Added on February 17, 2025**
+
+Consider a large vector $v$ distributed over large $n$ processes.
+
+$$ v = [v_0 \ v_1 \ v_2 \ v_3 \ ... \ v_n] \ .$$
+
+Each process $i$ holds a part of the vector $v_i$. For example,
+
+$$ v_0 = [1 \ 2 \ ... \ 100] \ .$$
+
+$$ v_1 = [101 \ 102 \ ... \ 200] \ .$$
+
+$$ \vdots $$
+
+$$ v_n = [100n + 1 \ ... \ 100(n+1)] \ .$$
+
+In this demo, we consider dot product of a vector with itself. Each process computes the local dot product and communicates its local dot product result with all other processes to compute the dot product over the global vector. The vector consist of sequential integers starting from a given integer value. The unit tests are specified in ```test_dot_product.cpp``` and ```test_gen_num.cpp```. The code is tested using ```ctest``` with code coverage.
+
+To run the demo:
+```
+cd dot_product
+mkdir build && cd build
+cmake ..
+make
+ctest -T Test -T Coverage
+./dot_product
+mpirun -np num_procs ./dot_product
+```
+
 ### Dependencies
+**Update [February 17, 2025]** Docker image for Dot Product added.
 
 - [DOLFINx](https://fenicsproject.org/)
 - [PyTorch](https://pytorch.org/)
 
 It is recommended to use the docker images and provided ```docker-compose.yaml``` file. This will ensure proper library versions are used.
 
-```docker compose -f docker-compose.yaml up ```
+```
+docker compose build --no-cache
+docker compose up
+```
 
-It will create two containers for FEniCSx and PyTorch. Alternatively, the individual ```Dockerfile```s are provided in the folders ```fenics_docker``` and ```pytorch_docker```. Afterwards, change directory to the cloned github repository and follow the steps above.
+It will create three containers for FEniCSx, PyTorch and Dot product. Alternatively, the individual ```Dockerfile```s are provided in the folders ```fenics_docker```,  ```pytorch_docker``` and ```dot_product_docker```. Afterwards, change directory to the cloned github repository and follow the steps above.

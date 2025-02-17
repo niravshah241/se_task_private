@@ -12,3 +12,10 @@ services:
       dockerfile: Dockerfile
       tags:
         - "no-tag"
+
+  dot_product_se_task:
+    build: 
+      context: dot_product_docker
+      dockerfile: Dockerfile
+      tags:
+        - "no-tag"

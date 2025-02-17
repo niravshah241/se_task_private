@@ -14,8 +14,7 @@ using namespace dolfinx;
 using T = PetscScalar;
 using U = typename dolfinx::scalar_value_type_t<T>;
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char *argv[]) {
   dolfinx::init_logging(argc, argv);
   PetscInitialize(&argc, &argv, nullptr, nullptr);
 
@@ -41,34 +40,28 @@ int main(int argc, char* argv[])
         *form_poisson_L, {V}, {{"f", f}, {"g", g}}, {}, {}));
 
     // Specify boundary conditions
-    auto facets = mesh::locate_entities_boundary(
-        *mesh, 2,
-        [](auto x)
-        {
-          using U = typename decltype(x)::value_type;
-          constexpr U eps = 1.0e-8;
-          std::vector<std::int8_t> marker(x.extent(1), false);
-          for (std::size_t p = 0; p < x.extent(1); ++p)
-          {
-            auto x0 = x(0, p);
-            auto x1 = x(1, p);
-            auto x2 = x(2, p);
-            auto tol = 1 - eps;
-            if (std::abs(x0) > tol or std::abs(x1) > tol or std::abs(x2) > tol)
-              marker[p] = true;
-          }
-          return marker;
-        });
+    auto facets = mesh::locate_entities_boundary(*mesh, 2, [](auto x) {
+      using U = typename decltype(x)::value_type;
+      constexpr U eps = 1.0e-8;
+      std::vector<std::int8_t> marker(x.extent(1), false);
+      for (std::size_t p = 0; p < x.extent(1); ++p) {
+        auto x0 = x(0, p);
+        auto x1 = x(1, p);
+        auto x2 = x(2, p);
+        auto tol = 1 - eps;
+        if (std::abs(x0) > tol or std::abs(x1) > tol or std::abs(x2) > tol)
+          marker[p] = true;
+      }
+      return marker;
+    });
     const auto bdofs = fem::locate_dofs_topological(
         *V->mesh()->topology_mutable(), *V->dofmap(), 2, facets);
     auto bc = std::make_shared<const fem::DirichletBC<T>>(0.0, bdofs, V);
 
     f->interpolate(
-        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
-        {
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>> {
           std::vector<T> f;
-          for (std::size_t p = 0; p < x.extent(1); ++p)
-          {
+          for (std::size_t p = 0; p < x.extent(1); ++p) {
             auto dx = (x(0, p) - 0.40) * (x(0, p) - 0.40);
             auto dy = (x(1, p) - 0.55) * (x(1, p) - 0.55);
             auto dz = (x(2, p) - 0.27) * (x(2, p) - 0.27);
@@ -79,8 +72,7 @@ int main(int argc, char* argv[])
         });
 
     g->interpolate(
-        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>>
-        {
+        [](auto x) -> std::pair<std::vector<T>, std::vector<std::size_t>> {
           std::vector<T> f;
           for (std::size_t p = 0; p < x.extent(1); ++p)
             f.push_back(0);
@@ -92,7 +84,7 @@ int main(int argc, char* argv[])
     auto A = la::petsc::Matrix(fem::petsc::create_matrix(*a), false);
     la::Vector<T> b(L->function_spaces()[0]->dofmap()->index_map,
                     L->function_spaces()[0]->dofmap()->index_map_bs());
-    
+
     MatZeroEntries(A.mat());
     fem::assemble_matrix(la::petsc::Matrix::set_block_fn(A.mat(), ADD_VALUES),
                          *a, {bc});
@@ -108,14 +100,14 @@ int main(int argc, char* argv[])
     fem::apply_lifting<T, U>(b.mutable_array(), {a}, {{bc}}, {}, T(1));
     b.scatter_rev(std::plus<T>());
     fem::set_bc<T, U>(b.mutable_array(), {bc});
-    
+
     // Solver (with preconditioner) setup
     la::petsc::KrylovSolver lu(MPI_COMM_WORLD);
     la::petsc::options::set("ksp_type", "cg");
     la::petsc::options::set("pc_type", "gamg");
     lu.set_from_options();
 
-    // Solve the problem    
+    // Solve the problem
     lu.set_operator(A.mat());
     la::petsc::Vector _u(la::petsc::create_vector_wrap(*u->x()), false);
     la::petsc::Vector _b(la::petsc::create_vector_wrap(b), false);
@@ -126,7 +118,6 @@ int main(int argc, char* argv[])
     // Save solution in VTK format
     io::VTKFile file(MPI_COMM_WORLD, "u.pvd", "w");
     file.write<T>({*u}, 0.0);
-
   }
 
   PetscFinalize();
